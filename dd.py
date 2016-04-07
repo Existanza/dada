@@ -10,14 +10,14 @@ import random
 
 start = time.clock()
 
-if len(sys.argv) < 3:
+if len(sys.argv) < 0:
     sys.exit("Error: the input and output files weren't provided.\n"
              "Example: python3 dd.py input.txt output.txt")
 try:
-    inputFile = open(sys.argv[1], 'r')
-    outputFile = open(sys.argv[2], 'w')
-    # inputFile = open("padeusz.txt", 'r')
-    # outputFile = open("pad.txt", 'w')
+    # inputFile = open(sys.argv[1], 'r')
+    # outputFile = open(sys.argv[2], 'w')
+    inputFile = open("padeusz.txt", 'r')
+    outputFile = open("pad2.txt", 'w')
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
@@ -35,9 +35,9 @@ nGramMatrix = [[0]*alphabetSize for i in range(alphabetSize)]
 endings = [0]*alphabetSize
 startingConsonants = [0]*25
 startingConsonantsCounter = 0
-syllables = [0]*100
+syllables = [0]*50
 syllableCounter = 0
-characters = [0]*500
+characters = [0]*250
 charCounter = 0
 wordCounter = 0
 
@@ -108,15 +108,15 @@ def generate_word(s):
     s = 0
     i = 0
     while s < r:
-        s += startingConsonants[i]
+        s += i*startingConsonants[i]
         i += 1
-    for i in range(s):
+    i -= 1
+    for j in range(i):
         cb = complete_bigram(w[0])
         if cb in vowels:
-            i -= 1
+            j -= 1
         else:
             w = cb + w
-    # print(w)
     return w
 
 
@@ -136,24 +136,31 @@ for line in inputFile:
             characters[len(word)] += 1
             charCounter += len(word)
             analyze_n_grams(word)
-            syllableCounter += analyze_syllables(word[::-1])
+            syllableCounter += analyze_syllables(word)
+            # if random.random() < 0.001:
+            #    print(syllableCounter)
+            #    print(syllables)
 
 wordsRemaining = wordCounter
 for i in range(len(startingConsonants)):
     startingConsonantsCounter += startingConsonants[i]
+
+print(startingConsonants)
 
 while wordsRemaining > 0:
     r = max(1, random.randrange(syllableCounter+1))
     l = 0
     s = 0
     while s < r:
-        s += syllables[l]
+        s += l*syllables[l]
         l += 1
     generate_word(l - 1)
     outputFile.write(generate_word(l-1) + ' ')
     if wordsRemaining % 12 == 0:
         outputFile.write('\n')
     wordsRemaining -= 1
+    # if random.random() < 0.001:
+    #    print(wordsRemaining)
 
 inputFile.close()
 outputFile.close()
