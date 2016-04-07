@@ -16,8 +16,10 @@ if len(sys.argv) < 3:
 try:
     inputFile = open(sys.argv[1], 'r')
     outputFile = open(sys.argv[2], 'w')
+    # inputFile = open("pride.txt", 'r')
+    # outputFile = open("prideout.txt", 'w')
     # inputFile = open("padeusz.txt", 'r')
-    # outputFile = open("pad2.txt", 'w')
+    # outputFile = open("pad5.txt", 'w')
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
@@ -33,7 +35,7 @@ vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
 diphthongs = {'au', 'eu', 'ia', 'ią', 'ie', 'ię', 'io', 'iu'}
 nGramMatrix = [[0]*alphabetSize for i in range(alphabetSize)]
 endings = [0]*alphabetSize
-startingConsonants = [0]*25
+startingConsonants = [0]*20
 startingConsonantsCounter = 0
 syllables = [0]*50
 syllableCounter = 0
@@ -72,7 +74,6 @@ def analyze_syllables(w):
     syllables[s] += 1
     startingConsonants[c] += 1
     # print(str(s) + ' ' + w)
-    return s
 
 
 def generate_letter():
@@ -108,7 +109,7 @@ def generate_word(s):
     s = 0
     i = 0
     while s < r:
-        s += i*startingConsonants[i]
+        s += startingConsonants[i]
         i += 1
     i -= 1
     for j in range(i):
@@ -137,13 +138,27 @@ for line in inputFile:
             characters[len(word)] += 1
             charCounter += len(word)
             analyze_n_grams(word)
-            syllableCounter += analyze_syllables(word)
+            analyze_syllables(word)
 
 wordsRemaining = wordCounter
 for i in range(len(startingConsonants)):
     startingConsonantsCounter += startingConsonants[i]
+for i in range(len(syllables)):
+    syllableCounter += syllables[i]
+
+# print(startingConsonants)
+# print(syllables)
 
 while wordsRemaining > 0:
+    '''r = max(1, random.randrange(charCounter + 1)) #fix
+    l = 0
+    s = 0
+    while s < r:
+        s += characters[l]
+        l += 1
+    generate_word_by_characters(l - 1)
+    outputFile.write(generate_word_by_characters(l-1) + ' ')'''
+
     r = max(1, random.randrange(syllableCounter+1))
     l = 0
     s = 0
@@ -152,7 +167,8 @@ while wordsRemaining > 0:
         l += 1
     generate_word(l - 1)
     outputFile.write(generate_word(l-1) + ' ')
-    if wordsRemaining % 10 == 0:
+
+    if wordsRemaining % 12 == 0:
         outputFile.write('\n')
     wordsRemaining -= 1
 
