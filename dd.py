@@ -5,15 +5,19 @@
 # [GCC 4.8.4]
 
 import sys
+import time
 import random
 
+start = time.clock()
 
 if len(sys.argv) < 3:
     sys.exit("Error: the input and output files weren't provided.\n"
              "Example: python3 dd.py input.txt output.txt")
 try:
     inputFile = open(sys.argv[1], 'r')
-    outputFile = open(sys.argv[2], 'a')
+    outputFile = open(sys.argv[2], 'w')
+    # inputFile = open("padeusz.txt", 'r')
+    # outputFile = open("pad.txt", 'w')
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
@@ -29,9 +33,11 @@ vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
 diphthongs = {'au', 'eu', 'ia', 'ią', 'ie', 'ię', 'io', 'iu'}
 nGramMatrix = [[0]*alphabetSize for i in range(alphabetSize)]
 endings = [0]*alphabetSize
-syllables = [0]*20
+startingConsonants = [0]*25
+startingConsonantsCounter = 0
+syllables = [0]*100
 syllableCounter = 0
-characters = [0]*25
+characters = [0]*500
 charCounter = 0
 wordCounter = 0
 
@@ -39,9 +45,9 @@ wordCounter = 0
 def normalize_word(w):
     nw = ''
     for i in range(len(w)):
-        if w[i] in alphabetList and w[i] is not 0:
+        if w[i] in alphabetList and w[i] is not "0":
             nw += w[i]
-        elif w[i] in capitalsList and w[i] is not 0:
+        elif w[i] in capitalsList and w[i] is not "0":
             nw += toSmallDict[w[i]]
     # print(nw)
     return nw
@@ -57,10 +63,14 @@ def analyze_n_grams(w):
 
 def analyze_syllables(w):
     s = 0
+    c = 0
     for i in range(len(w)):
         if (w[i] in vowels) and (i == len(w)-1 or (not w[i:i+2] in diphthongs)):
             s += 1
+        elif s == 0:
+            c += 1
     syllables[s] += 1
+    startingConsonants[c] += 1
     # print(str(s) + ' ' + w)
     return s
 
@@ -87,31 +97,40 @@ def complete_bigram(ch):
     return alphabet[i - 1]
 
 
-def generate_word(l):
+def generate_word(s):
+    w = generate_letter()
+    i = 0   # completed syllables
+    while i < s:
+        if w[0] in vowels and (len(w) < 2 or not w[0:2] in diphthongs):
+            i += 1
+        w = complete_bigram(w[0]) + w
+    r = max(1, random.randrange(startingConsonantsCounter+1))
+    s = 0
+    i = 0
+    while s < r:
+        s += startingConsonants[i]
+        i += 1
+    for i in range(s):
+        cb = complete_bigram(w[0])
+        if cb in vowels:
+            i -= 1
+        else:
+            w = cb + w
+    # print(w)
+    return w
+
+
+def generate_word_by_characters(l):
     w = generate_letter()
     for i in range(1, l):
         w = complete_bigram(w[0]) + w
     # print(w)
     return w
 
-'''
-normalize_word('Sroka.')
-normalize_word('ChuJ!!111')
-normalize_word('GŻEGżółKA!@@@!111')
-analyze_n_grams('pokiereszowany')
-analyze_syllables('pokiereszowany')
-analyze_syllables('kier')
-analyze_syllables('ciało')
-analyze_syllables('ogień')
-analyze_syllables('gar')
-analyze_syllables('naiwny')
-analyze_syllables('korci')
-'''
 
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
-        # print(word)
         if len(word) > 0:
             wordCounter += 1
             characters[len(word)] += 1
@@ -120,23 +139,26 @@ for line in inputFile:
             syllableCounter += analyze_syllables(word[::-1])
 
 wordsRemaining = wordCounter
-
-'''for i in range(len(endings)):
-    if endings[i] > 0:
-        print('ai:' + alphabet[i])'''
+for i in range(len(startingConsonants)):
+    startingConsonantsCounter += startingConsonants[i]
 
 while wordsRemaining > 0:
-    r = max(1, random.randrange(wordCounter+1))
+    r = max(1, random.randrange(syllableCounter+1))
     l = 0
     s = 0
     while s < r:
-        s += characters[l]
+        s += syllables[l]
         l += 1
     generate_word(l - 1)
-    # print(str(l-1) + " " + generate_word(l - 1), end=' ')
     outputFile.write(generate_word(l-1) + ' ')
+    if wordsRemaining % 12 == 0:
+        outputFile.write('\n')
     wordsRemaining -= 1
-# '''
+
 inputFile.close()
 outputFile.close()
-# TOOO : poprawic sylaby
+
+end = time.clock()
+
+print(str(charCounter) + " znakow przetworzonych")
+print("Czas wykonywania: " + str(end - start) + "s")
