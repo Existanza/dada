@@ -10,14 +10,14 @@ import random
 
 start = time.clock()
 
-if len(sys.argv) < 0:
+if len(sys.argv) < 3:
     sys.exit("Error: the input and output files weren't provided.\n"
              "Example: python3 dd.py input.txt output.txt")
 try:
-    # inputFile = open(sys.argv[1], 'r')
-    # outputFile = open(sys.argv[2], 'w')
-    inputFile = open("padeusz.txt", 'r')
-    outputFile = open("pad2.txt", 'w')
+    inputFile = open(sys.argv[1], 'r')
+    outputFile = open(sys.argv[2], 'w')
+    # inputFile = open("padeusz.txt", 'r')
+    # outputFile = open("pad2.txt", 'w')
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
@@ -99,7 +99,7 @@ def complete_bigram(ch):
 
 def generate_word(s):
     w = generate_letter()
-    i = 0   # completed syllables
+    i = 0
     while i < s:
         if w[0] in vowels and (len(w) < 2 or not w[0:2] in diphthongs):
             i += 1
@@ -117,6 +117,7 @@ def generate_word(s):
             j -= 1
         else:
             w = cb + w
+    # print(w)
     return w
 
 
@@ -137,15 +138,10 @@ for line in inputFile:
             charCounter += len(word)
             analyze_n_grams(word)
             syllableCounter += analyze_syllables(word)
-            # if random.random() < 0.001:
-            #    print(syllableCounter)
-            #    print(syllables)
 
 wordsRemaining = wordCounter
 for i in range(len(startingConsonants)):
     startingConsonantsCounter += startingConsonants[i]
-
-print(startingConsonants)
 
 while wordsRemaining > 0:
     r = max(1, random.randrange(syllableCounter+1))
@@ -156,11 +152,9 @@ while wordsRemaining > 0:
         l += 1
     generate_word(l - 1)
     outputFile.write(generate_word(l-1) + ' ')
-    if wordsRemaining % 12 == 0:
+    if wordsRemaining % 10 == 0:
         outputFile.write('\n')
     wordsRemaining -= 1
-    # if random.random() < 0.001:
-    #    print(wordsRemaining)
 
 inputFile.close()
 outputFile.close()
