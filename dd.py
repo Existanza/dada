@@ -4,6 +4,8 @@
 # 3.4.3 (default, Oct 14 2015, 20:28:29)
 # [GCC 4.8.4]
 
+# TODO unikac wieloliterowych zbitek spolglosek
+
 import sys
 import time
 import random
@@ -23,18 +25,20 @@ try:
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
+generate_by_default = True
 generate_by_characters = False
-alphabetSize = 50
-alphabet = '0aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż'
+generate_by_syllables = False
+alphabetSize = 40
+alphabet = '+^$aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż'
 alphabetList = [c for c in alphabet]
-capitals = '0AĄBCĆDEĘFGHIJKLŁMNŃOÓPQRSŚTUVWXYZŹŻ'
+capitals = '+^$AĄBCĆDEĘFGHIJKLŁMNŃOÓPQRSŚTUVWXYZŹŻ'
 capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 alphabetDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet)+1))}
 vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
 diphthongs = {'au', 'eu', 'ia', 'ią', 'ie', 'ię', 'io', 'iu'}
-nGramMatrix = [[0]*alphabetSize for i in range(alphabetSize)]
-endings = [0]*alphabetSize
+twoGramMatrix = [[0] * alphabetSize for i in range(alphabetSize)]
+threeGramMatrix = [[[0]*alphabetSize for i in range(alphabetSize)] * alphabetSize for j in range(alphabetSize)]
 startingConsonants = [0]*20
 syllables = [0]*50
 characters = [0]*250
@@ -45,19 +49,22 @@ wordCounter = 0
 def normalize_word(w):
     nw = ''
     for i in range(len(w)):
-        if w[i] in alphabetList and w[i] is not "0":
+        if w[i] in alphabetList and w[i] is not ("+" or "^" or "$"):
             nw += w[i]
-        elif w[i] in capitalsList and w[i] is not "0":
+        elif w[i] in capitalsList and w[i] is not ("+" or "^" or "$"):
             nw += toSmallDict[w[i]]
     # print(nw)
     return nw
 
 
 def analyze_n_grams(w):
-    endings[alphabetDict[w[len(w)-1]]] += 1
+    twoGramMatrix[2][alphabetDict[w[len(w) - 1]]] += 1
+    twoGramMatrix[2][0] += 1
+    twoGramMatrix[alphabetDict[w[0]]][1] += 1
+    twoGramMatrix[alphabetDict[w[0]]][0] += 1
     for i in range(1, len(w)):
-        nGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i-1]]] += 1
-        nGramMatrix[alphabetDict[w[i]]][0] += 1
+        twoGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]] += 1
+        twoGramMatrix[alphabetDict[w[i]]][0] += 1
         # print(w[i] + ' ' + w[i-1])
 
 
@@ -77,26 +84,33 @@ def analyze_syllables(w):
 def generate_letter():
     r = max(1, random.randrange(wordCounter+1))
     s = 0
-    i = 1
+    i = 3
     while s < r:
-        s += endings[i]
+        s += twoGramMatrix[2][i]
         i += 1
     # print(str(r) + alphabet[i-1])
     return alphabet[i - 1]
 
 
 def complete_bigram(ch):
-    r = max(1, random.randrange(nGramMatrix[alphabetDict[ch]][0]+1))
+    r = max(1, random.randrange(twoGramMatrix[alphabetDict[ch]][0] + 1))
     s = 0
     i = 1
     while s < r:
-        s += nGramMatrix[alphabetDict[ch]][i]
+        s += twoGramMatrix[alphabetDict[ch]][i]
         i += 1
     # print(ch + ' -> ' + alphabet[i-1])
     return alphabet[i - 1]
 
 
-def generate_word(s):
+def generate_word():
+    w = "$"
+    while w[0] is not "^":
+        w = complete_bigram(w[0]) + w
+    return w[1:-1]
+
+
+def generate_word_by_syllables(s):
     w = generate_letter()
     i = 0
     while i < s:
@@ -143,20 +157,24 @@ wordsRemaining = wordCounter
 # print(startingConsonants)
 # print(syllables)
 
+for r in twoGramMatrix:
+    print(r)
+
 while wordsRemaining > 0:
-    r = max(1, random.randrange(wordCounter + 1))
-    l = 0
-    s = 0
-    while s < r:
-        s = s + characters[l] if generate_by_characters else s + syllables[l]
-        l += 1
-    if generate_by_characters:
-        generate_word_by_characters(l - 1)
-        outputFile.write(generate_word_by_characters(l-1) + ' ')
+    if generate_by_default:
+        outputFile.write(generate_word() + ' ')
     else:
-        generate_word(l - 1)
-        outputFile.write(generate_word(l - 1) + ' ')
-    if wordsRemaining % 12 == 0:
+        r = max(1, random.randrange(wordCounter + 1))
+        l = 0
+        s = 0
+        while s < r:
+            s = s + characters[l] if generate_by_characters else s + syllables[l]
+            l += 1
+        if generate_by_characters:
+            outputFile.write(generate_word_by_characters(l-1) + ' ')
+        elif generate_by_syllables:
+            outputFile.write(generate_word_by_syllables(l - 1) + ' ')
+    if (wordCounter - wordsRemaining) % 10 == 9:
         outputFile.write('\n')
     wordsRemaining -= 1
 
