@@ -23,8 +23,8 @@ try:
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
-generate_by_default = True
-generate_by_characters = False
+generate_by_default = False
+generate_by_characters = True
 generate_by_syllables = False
 alphabetSize = 40
 alphabet = '+^$aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż'
@@ -38,8 +38,9 @@ diphthongs = {'au', 'eu', 'ia', 'ią', 'ie', 'ię', 'io', 'iu'}
 twoGramMatrix = [[0] * alphabetSize for i in range(alphabetSize)]
 threeGramMatrix = [[[0]*alphabetSize for i in range(alphabetSize)] * alphabetSize for j in range(alphabetSize)]
 startingConsonants = [0]*20
-syllables = [0]*50
-characters = [0]*250
+syllables = [0]*25
+characters = [0]*100
+sanitizeAttempts = [0]
 charCounter = 0
 wordCounter = 0
 
@@ -56,18 +57,13 @@ def normalize_word(w):
 
 
 def analyze_n_grams(w):
-    twoGramMatrix[2][alphabetDict[w[len(w) - 1]]] += 1
-    twoGramMatrix[2][0] += 1
-    twoGramMatrix[alphabetDict[w[0]]][1] += 1
-    twoGramMatrix[alphabetDict[w[0]]][0] += 1
-    for i in range(1, min(2, len(w))):
-        twoGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]] += 1
-        twoGramMatrix[alphabetDict[w[i]]][0] += 1
-        # print(w[i] + ' ' + w[i-1])
+    w = "^" + w + "$"
+    twoGramMatrix[alphabetDict[w[1]]][alphabetDict[w[0]]] += 1
+    twoGramMatrix[alphabetDict[w[1]]][0] += 1
     for i in range(2, len(w)):
         twoGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]] += 1
         twoGramMatrix[alphabetDict[w[i]]][0] += 1
-        threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]][alphabetDict[w[i - 2]]] += 1
+        threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]][alphabetDict[w[i - 2]]] = True
 
 
 def analyze_syllables(w):
@@ -110,7 +106,7 @@ def generate_word():
     while w[0] is not "^":
         w = complete_bigram(w[0]) + w
     for i in range(1, len(w)-3):
-        if threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i+1]]][alphabetDict[w[i+2]]] == 0:
+        if not threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i+1]]][alphabetDict[w[i+2]]]:
             return generate_word()
     return w[1:-1]
 
@@ -139,10 +135,23 @@ def generate_word_by_syllables(s):
     return w
 
 
+def sanitize(w):
+    sanitizeAttempts[0] += 1
+    if w[0] != '^':
+        w = '^' + w + '$'
+    for i in range(2, len(w)):
+        if not threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]][alphabetDict[w[i - 2]]]:
+            return False
+    return True
+
+
 def generate_word_by_characters(l):
     w = generate_letter()
     for i in range(1, l):
-        w = complete_bigram(w[0]) + w
+        c = '^'
+        while c == '^':
+            c = complete_bigram(w[0])
+        w = c + w
     # print(w)
     return w
 
@@ -164,6 +173,8 @@ wordsRemaining = wordCounter
 # for r in twoGramMatrix:
 #     print(r)
 
+# print(characters)
+
 while wordsRemaining > 0:
     if generate_by_default:
         outputFile.write(generate_word() + ' ')
@@ -175,7 +186,13 @@ while wordsRemaining > 0:
             s = s + characters[l] if generate_by_characters else s + syllables[l]
             l += 1
         if generate_by_characters:
-            outputFile.write(generate_word_by_characters(l-1) + ' ')
+            l = min(l, 21)
+            w = generate_word_by_characters(l-1)
+            while not sanitize(w):
+                w = generate_word_by_characters(l - 1)
+            # if len(w) >= 15:
+            #     print(str(len(w)) + ' ' + w)
+            outputFile.write(w + ' ')
         elif generate_by_syllables:
             outputFile.write(generate_word_by_syllables(l - 1) + ' ')
     if (wordCounter - wordsRemaining) % 10 == 9:
@@ -187,5 +204,7 @@ outputFile.close()
 
 end = time.clock()
 
+print(str(wordCounter) + " slow przetworzonych")
 print(str(charCounter) + " znakow przetworzonych")
+print(str(sanitizeAttempts) + " razy sanitize uruchomionych")
 print("Czas wykonywania: " + str(end - start) + "s")

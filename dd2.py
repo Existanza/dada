@@ -26,9 +26,12 @@ capitals = '+^$AĄBCĆDEĘFGHIJKLŁMNŃOÓPQRSŚTUVWXYZŹŻ'
 capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 alphabetDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet)+1))}
+vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
+diphthongs = {'au', 'eu', 'ia', 'ią', 'ie', 'ię', 'io', 'iu'}
 twoGramMatrix = [[0] * alphabetSize for i in range(alphabetSize)]
 threeGramMatrix = [[[0]*alphabetSize for i in range(alphabetSize)] * alphabetSize for j in range(alphabetSize)]
-characters = [0]*250
+characters = [0]*100
+sanitizeAttempts = [0]
 charCounter = 0
 wordCounter = 0
 
@@ -45,18 +48,24 @@ def normalize_word(w):
 
 
 def analyze_n_grams(w):
-    twoGramMatrix[2][alphabetDict[w[len(w) - 1]]] += 1
-    twoGramMatrix[2][0] += 1
-    twoGramMatrix[alphabetDict[w[0]]][1] += 1
-    twoGramMatrix[alphabetDict[w[0]]][0] += 1
-    for i in range(1, min(2, len(w))):
-        twoGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]] += 1
-        twoGramMatrix[alphabetDict[w[i]]][0] += 1
-        # print(w[i] + ' ' + w[i-1])
+    w = "^" + w + "$"
+    twoGramMatrix[alphabetDict[w[1]]][alphabetDict[w[0]]] += 1
+    twoGramMatrix[alphabetDict[w[1]]][0] += 1
     for i in range(2, len(w)):
         twoGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]] += 1
         twoGramMatrix[alphabetDict[w[i]]][0] += 1
-        threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]][alphabetDict[w[i - 2]]] += 1
+        threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]][alphabetDict[w[i - 2]]] = True
+
+
+def generate_letter():
+    r = max(1, random.randrange(wordCounter+1))
+    s = 0
+    i = 3
+    while s < r:
+        s += twoGramMatrix[2][i]
+        i += 1
+    # print(str(r) + alphabet[i-1])
+    return alphabet[i - 1]
 
 
 def complete_bigram(ch):
@@ -70,15 +79,26 @@ def complete_bigram(ch):
     return alphabet[i - 1]
 
 
-def generate_word():
-    w = "$"
-    while w[0] is not "^":
-        w = complete_bigram(w[0]) + w
-    for i in range(1, len(w)-3):
-        if threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i+1]]][alphabetDict[w[i+2]]] == 0:
-            return generate_word()
-    # print(w[1:-1])
-    return w[1:-1]
+def sanitize(w):
+    sanitizeAttempts[0] += 1
+    if w[0] != '^':
+        w = '^' + w + '$'
+    for i in range(2, len(w)):
+        if not threeGramMatrix[alphabetDict[w[i]]][alphabetDict[w[i - 1]]][alphabetDict[w[i - 2]]]:
+            return False
+    # print(w)
+    return True
+
+
+def generate_word_by_characters(l):
+    w = generate_letter()
+    for i in range(1, l):
+        c = '^'
+        while c == '^':
+            c = complete_bigram(w[0])
+        w = c + w
+    # print(w)
+    return w
 
 
 for line in inputFile:
@@ -93,7 +113,17 @@ for line in inputFile:
 wordsRemaining = wordCounter
 
 while wordsRemaining > 0:
-    outputFile.write(generate_word() + ' ')
+    r = max(1, random.randrange(wordCounter + 1))
+    l = 0
+    s = 0
+    while s < r:
+        s += characters[l]
+        l += 1
+    l = min(l, 21)
+    w = generate_word_by_characters(l-1)
+    while not sanitize(w):
+        w = generate_word_by_characters(l - 1)
+    outputFile.write(w + ' ')
     if (wordCounter - wordsRemaining) % 10 == 9:
         outputFile.write('\n')
     wordsRemaining -= 1
@@ -103,5 +133,7 @@ outputFile.close()
 
 end = time.clock()
 
+print(str(wordCounter) + " slow przetworzonych")
 print(str(charCounter) + " znakow przetworzonych")
+print(str(sanitizeAttempts) + " razy sanitize uruchomionych")
 print("Czas wykonywania: " + str(end - start) + "s")
