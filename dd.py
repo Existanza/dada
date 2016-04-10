@@ -4,6 +4,8 @@
 # 3.4.3 (default, Oct 14 2015, 20:28:29)
 # [GCC 4.8.4]
 
+#TODO - naprawic generate_by_syllables
+
 import sys
 import time
 import random
@@ -24,8 +26,9 @@ except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
 generate_by_default = False
-generate_by_characters = True
+generate_by_characters = False
 generate_by_syllables = False
+thorough_generate = True
 alphabetSize = 40
 alphabet = '+^$aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż'
 alphabetList = [c for c in alphabet]
@@ -37,6 +40,10 @@ vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
 diphthongs = {'au', 'eu', 'ia', 'ią', 'ie', 'ię', 'io', 'iu'}
 twoGramMatrix = [[0] * alphabetSize for i in range(alphabetSize)]
 threeGramMatrix = [[[0]*alphabetSize for i in range(alphabetSize)] * alphabetSize for j in range(alphabetSize)]
+wordOccurrences = {}
+charOccurrences = {l: 0 for l in alphabet}
+originalBeginningsOccurrences = {l: 0 for l in alphabet}
+processedBeginningsOccurrences = {l: 0 for l in alphabet}
 startingConsonants = [0]*20
 syllables = [0]*25
 characters = [0]*100
@@ -156,15 +163,41 @@ def generate_word_by_characters(l):
     return w
 
 
+def thorough_generate_word(l):
+    w = "$"
+    while w[0] is not "^":
+        w = complete_bigram(w[0]) + w
+    if len(w)-2 != l:
+        return "^^^^^^"
+    return w[1:-1]
+
+
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
         if len(word) > 0:
+            originalBeginningsOccurrences[word[0]] += 1
+            for i in range(len(word)):
+                charOccurrences[word[i]] += 1
+            if word in wordOccurrences:
+                wordOccurrences[word] += 1
+            else:
+                wordOccurrences[word] = 1
             wordCounter += 1
             characters[len(word)] += 1
             charCounter += len(word)
             analyze_n_grams(word)
             analyze_syllables(word)
+
+'''
+wordList = sorted(wordOccurrences.items(), key=lambda x: x[1])
+charList = sorted(charOccurrences.items())
+for i in charList:
+    if i[1] is not 0:
+        print(str(i[0]) + ": " + str(i[1]/charCounter*100) + "%")
+print()
+'''
+# print(wordList[:-50:-1])
 
 wordsRemaining = wordCounter
 
@@ -183,21 +216,41 @@ while wordsRemaining > 0:
         l = 0
         s = 0
         while s < r:
-            s = s + characters[l] if generate_by_characters else s + syllables[l]
+            s = s + syllables[l] if generate_by_syllables else s + characters[l]
             l += 1
         if generate_by_characters:
             l = min(l, 21)
             w = generate_word_by_characters(l-1)
             while not sanitize(w):
                 w = generate_word_by_characters(l - 1)
+            processedBeginningsOccurrences[w[0]] += 1
             # if len(w) >= 15:
             #     print(str(len(w)) + ' ' + w)
+            outputFile.write(w + ' ')
+        elif thorough_generate:
+            l = min(l, 21)
+            w = thorough_generate_word(l-1)
+            while not sanitize(w):
+                w = thorough_generate_word(l-1)
+            processedBeginningsOccurrences[w[0]] += 1
+            # if len(w) >= 15:
+            #     print(str(len(w)) + ' ' + w)
+            if wordsRemaining % 1000 == 0:
+                print(wordsRemaining)
+            # print(str(wordsRemaining) + '  ' + str(l) + '  ' + w)
             outputFile.write(w + ' ')
         elif generate_by_syllables:
             outputFile.write(generate_word_by_syllables(l - 1) + ' ')
     if (wordCounter - wordsRemaining) % 10 == 9:
         outputFile.write('\n')
     wordsRemaining -= 1
+
+print()
+charList2 = sorted(originalBeginningsOccurrences.items())
+charList3 = sorted(processedBeginningsOccurrences.items())
+for i, j in zip(charList2, charList3):
+    if i[1] or j[1] is not 0:
+        print(str(i[0]) + ": " + str(i[1]/wordCounter*100) + "%" + "   " + str(j[1]/wordCounter*100) + "%")
 
 inputFile.close()
 outputFile.close()
@@ -206,5 +259,5 @@ end = time.clock()
 
 print(str(wordCounter) + " slow przetworzonych")
 print(str(charCounter) + " znakow przetworzonych")
-print(str(sanitizeAttempts) + " razy sanitize uruchomionych")
+print(str(sanitizeAttempts[0]) + " razy sanitize uruchomionych")
 print("Czas wykonywania: " + str(end - start) + "s")
