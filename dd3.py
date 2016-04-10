@@ -4,6 +4,10 @@
 # 3.4.3 (default, Oct 14 2015, 20:28:29)
 # [GCC 4.8.4]
 
+
+#TODO najpierw wygenerowac 2x liczba slow, potem print
+
+
 import sys
 import time
 import random
