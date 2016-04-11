@@ -20,18 +20,18 @@ except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
 aSize = 40
-alphabet = '+^$aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż'
+alphabet = '+^$aeiouybcdfghjklmnpqrstvwxząćęłńóśźż'
 alphabetList = [c for c in alphabet]
-capitals = '+^$AĄBCĆDEĘFGHIJKLŁMNŃOÓPQRSŚTUVWXYZŹŻ'
+capitals = '+^$AEIOUYBCDFGHJKLMNPQRSTVWXZĄĆĘŁŃÓŚŹŻ'
 capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 aDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet) + 1))}
-vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
 twoGramMatrix = [[0] * aSize for i in range(aSize)]
 threeGramMatrix = [[[0] * aSize for i in range(aSize)] *
                    aSize for j in range(aSize)]
-characters = [0]*21
-characters2 = [0]*21
+characters = [0] * 21
+characters2 = [0] * 21
+singletons = [0] * aSize
 words = [[""] for i in range(21)]
 sanitizeAttempts = [0]
 charCounter = 0
@@ -69,6 +69,7 @@ def complete_bigram(ch):
 
 
 def sanitize(w):
+    w = '^' + w + '$'
     for i in range(2, len(w)):
         if not threeGramMatrix[aDict[w[i]]][aDict[w[i - 1]]][aDict[w[i - 2]]]:
             return False
@@ -92,9 +93,9 @@ print("Parsing input...")
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
-        if len(word) > 0:
+        if 0 < len(word) <= 20:
             wordCounter += 1
-            characters[min(20, len(word))] += 1
+            characters[len(word)] += 1
             charCounter += len(word)
             analyze_n_grams(word)
 
@@ -109,6 +110,9 @@ while wordsToCreate > 0:
     w = generate_word()
     while not sanitize(w):
         w = generate_word()
+    if len(w) == 1:
+        singletons[0] += 1
+        singletons[aDict[w]] += 1
     words[min(len(w), 20)].append(w)
     wordsToCreate -= 1
 
@@ -125,7 +129,15 @@ while wordsRemaining > 0:
     while r < 0:
         r += characters[l]
     characters2[l] += 1
-    w = words[l][r % len(words[l])]
+    if l == 1:
+        i = 3
+        while r >= 0:
+            r -= singletons[i]
+            i += 1
+        i -= 1
+        w = alphabet[i]
+    else:
+        w = words[l][r % len(words[l])]
     if (wordCounter - wordsRemaining) % (int(wordCounter / 10)) == 0 and wordCounter != wordsRemaining:
         printf(".")
     outputFile.write(w + ' ')

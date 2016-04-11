@@ -1,7 +1,5 @@
 # Author: Existanza
 
-# TODO: wypisac proporcje slow istniejacych zaleznie od ich dlugosci
-
 import sys
 import time
 
@@ -16,9 +14,9 @@ try:
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
-alphabet = '+^$aąbcćdeęfghijklłmnńoópqrsśtuvwxyzźż'
+alphabet = '+^$aeiouybcdfghjklmnpqrstvwxząćęłńóśźż'
 alphabetList = [c for c in alphabet]
-capitals = '+^$AĄBCĆDEĘFGHIJKLŁMNŃOÓPQRSŚTUVWXYZŹŻ'
+capitals = '+^$AEIOUYBCDFGHJKLMNPQRSTVWXZĄĆĘŁŃÓŚŹŻ'
 capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 inputList = []
@@ -35,6 +33,11 @@ def normalize_word(w):
     return nw
 
 
+def find(w):
+    # TODO: binary search
+    return w in dictList
+
+
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
@@ -49,19 +52,27 @@ dictionary.close()
 
 wordsInDict = 0
 wordsTotal = len(inputList)
-
 counter = 0
+inputLengthsList = [0]*21
+dictLengthsList = [0]*21
 
 for word in inputList:
     counter += 1
-    if word in dictList:
-        # print(word)
+    inputLengthsList[len(word)] += 1
+    if find(word):
         wordsInDict += 1
-    if counter % 1000 == 0:
+        dictLengthsList[len(word)] += 1
+    if counter % int(wordsTotal/100) == 0:
         print(str(counter) + " / " + str(wordsTotal))
 
+percentageList = [0 if dictLengthsList[i] == 0 else dictLengthsList[i]/inputLengthsList[i]*100 for i in range(21)]
+
+for i in range(len(percentageList)):
+    print(str(i) + " letter(s): " + str(dictLengthsList[i]) + " / " + str(inputLengthsList[i]) + " (" + str(percentageList[i]) + "%)")
+
 print(str(wordsInDict/wordsTotal*100) + "%")
+print("of words exist in dictionary.")
 
 end = time.clock()
 
-print("Czas wykonywania: " + str(end - start) + "s")
+print("Running time: " + str(end - start) + "s")
