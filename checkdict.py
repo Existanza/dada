@@ -1,6 +1,6 @@
 # Author: Existanza
 
-#TODO: wypisac proporcje slow istniejacych zaleznie od ich dlugosci
+# TODO: wypisac proporcje slow istniejacych zaleznie od ich dlugosci
 
 import sys
 import time

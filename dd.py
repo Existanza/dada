@@ -4,7 +4,7 @@
 # 3.4.3 (default, Oct 14 2015, 20:28:29)
 # [GCC 4.8.4]
 
-#TODO - naprawic generate_by_syllables
+# TODO - naprawic generate_by_syllables
 
 import sys
 import time

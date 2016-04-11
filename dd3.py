@@ -4,10 +4,6 @@
 # 3.4.3 (default, Oct 14 2015, 20:28:29)
 # [GCC 4.8.4]
 
-
-#TODO najpierw wygenerowac 2x liczba slow, potem print
-
-
 import sys
 import time
 import random
@@ -34,7 +30,9 @@ vowels = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y']
 twoGramMatrix = [[0] * aSize for i in range(aSize)]
 threeGramMatrix = [[[0] * aSize for i in range(aSize)] *
                    aSize for j in range(aSize)]
-characters = [0]*100
+characters = [0]*21
+characters2 = [0]*21
+words = [[""] for i in range(21)]
 sanitizeAttempts = [0]
 charCounter = 0
 wordCounter = 0
@@ -71,48 +69,65 @@ def complete_bigram(ch):
 
 
 def sanitize(w):
-    sanitizeAttempts[0] += 1
-    if w[0] != '^':
-        w = '^' + w + '$'
     for i in range(2, len(w)):
         if not threeGramMatrix[aDict[w[i]]][aDict[w[i - 1]]][aDict[w[i - 2]]]:
             return False
     return True
 
 
-def thorough_generate_word(l):
+def generate_word():
     w = "$"
     while w[0] is not "^":
         w = complete_bigram(w[0]) + w
-    if len(w)-2 != l:
-        return "^^^^^^"
     return w[1:-1]
 
+
+def printf(w):
+    print(w, end=' ')
+    sys.stdout.flush()
+
+
+print("Parsing input...")
 
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
         if len(word) > 0:
             wordCounter += 1
-            characters[len(word)] += 1
+            characters[min(20, len(word))] += 1
             charCounter += len(word)
             analyze_n_grams(word)
 
 wordsRemaining = wordCounter
+wordsToCreate = 2*wordCounter
+
+printf("Creating words")
+
+while wordsToCreate > 0:
+    if wordsToCreate % int(wordCounter/5) == 0 and wordCounter != wordsToCreate:
+        printf(".")
+    w = generate_word()
+    while not sanitize(w):
+        w = generate_word()
+    words[min(len(w), 20)].append(w)
+    wordsToCreate -= 1
+
+print()
+printf("Parsing output")
 
 while wordsRemaining > 0:
     r = max(1, random.randrange(wordCounter + 1))
     l = 0
-    s = 0
-    while s < r:
-        s += characters[l]
+    while r >= 0 and l <= 20:
+        r -= characters[l]
         l += 1
-    l = min(l, 21)
-    w = thorough_generate_word(l-1)
-    while not sanitize(w):
-        w = thorough_generate_word(l-1)
-    if wordsRemaining % 1000 == 0:
-        print(wordsRemaining)
+    l -= 1
+    while r < 0:
+        r += characters[l]
+    characters2[l] += 1
+    w = words[l][r % len(words[l])]
+    if (wordCounter - wordsRemaining) % (int(wordCounter / 10)) == 0 and wordCounter != wordsRemaining:
+        printf(".")
     outputFile.write(w + ' ')
     if (wordCounter - wordsRemaining) % 10 == 9:
         outputFile.write('\n')
@@ -123,7 +138,9 @@ outputFile.close()
 
 end = time.clock()
 
+print()
+print(characters)
+print(characters2)
 print(str(wordCounter) + " slow przetworzonych")
 print(str(charCounter) + " znakow przetworzonych")
-print(str(sanitizeAttempts[0]) + " razy sanitize uruchomionych")
 print("Czas wykonywania: " + str(end - start) + "s")
