@@ -2,7 +2,7 @@
 
 import sys
 import time
-from bisect import bisect_left, insort
+from bisect import bisect_left
 
 start = time.clock()
 
@@ -44,13 +44,14 @@ def find(w):
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
-        if len(word) > 0:
+        if 20 >= len(word) > 0:
             inputList.append(word)
 inputFile.close()
 
 for line in dictionary:
     for word in line.split():
-        dictList.append(word)
+        if 20 >= len(word) > 0:
+            dictList.append(word)
 dictionary.close()
 
 wordsInDict = 0
@@ -61,6 +62,8 @@ dictLengthsList = [0]*21
 for word in inputList:
     inputLengthsList[len(word)] += 1
     if find(word):
+        if len(word) >= 9:
+            print(word)
         wordsInDict += 1
         dictLengthsList[len(word)] += 1
 
