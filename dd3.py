@@ -98,6 +98,9 @@ for line in inputFile:
             characters[len(word)] += 1
             charCounter += len(word)
             analyze_n_grams(word)
+            if len(word) == 1:
+                singletons[0] += 1
+                singletons[aDict[word]] += 1
 
 wordsRemaining = wordCounter
 wordsToCreate = 2*wordCounter
@@ -110,9 +113,6 @@ while wordsToCreate > 0:
     w = generate_word()
     while not sanitize(w):
         w = generate_word()
-    if len(w) == 1:
-        singletons[0] += 1
-        singletons[aDict[w]] += 1
     words[min(len(w), 20)].append(w)
     wordsToCreate -= 1
 
@@ -134,8 +134,7 @@ while wordsRemaining > 0:
         while r >= 0:
             r -= singletons[i]
             i += 1
-        i -= 1
-        w = alphabet[i]
+        w = alphabet[i-1]
     else:
         w = words[l][r % len(words[l])]
     if (wordCounter - wordsRemaining) % (int(wordCounter / 10)) == 0 and wordCounter != wordsRemaining:
@@ -151,8 +150,8 @@ outputFile.close()
 end = time.clock()
 
 print()
-print(characters)
-print(characters2)
+# print(characters)
+# print(characters2)
 print(str(wordCounter) + " slow przetworzonych")
 print(str(charCounter) + " znakow przetworzonych")
 print("Czas wykonywania: " + str(end - start) + "s")

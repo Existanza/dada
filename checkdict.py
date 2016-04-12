@@ -2,7 +2,7 @@
 
 import sys
 import time
-from bisect import bisect_left
+from bisect import bisect_left, insort
 
 start = time.clock()
 
@@ -35,7 +35,6 @@ def normalize_word(w):
 
 
 def find(w):
-    # TODO: binary search
     i = bisect_left(dictList, w)
     if i != len(dictList) and dictList[i] == w:
         return True
