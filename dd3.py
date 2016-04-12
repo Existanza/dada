@@ -19,10 +19,10 @@ try:
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
-aSize = 40
-alphabet = '+^$aeiouybcdfghjklmnpqrstvwxząćęłńóśźż'
+aSize = 50
+alphabet = '+^$aeiouybcdfghjklmnpqrstvwxząćęłńóśźżäöüßšžõ'
 alphabetList = [c for c in alphabet]
-capitals = '+^$AEIOUYBCDFGHJKLMNPQRSTVWXZĄĆĘŁŃÓŚŹŻ'
+capitals = '+^$AEIOUYBCDFGHJKLMNPQRSTVWXZĄĆĘŁŃÓŚŹŻÄÖÜẞŠŽÕ'
 capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 aDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet) + 1))}
