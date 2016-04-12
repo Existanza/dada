@@ -2,6 +2,7 @@
 
 import sys
 import time
+from bisect import bisect_left
 
 start = time.clock()
 
@@ -35,7 +36,10 @@ def normalize_word(w):
 
 def find(w):
     # TODO: binary search
-    return w in dictList
+    i = bisect_left(dictList, w)
+    if i != len(dictList) and dictList[i] == w:
+        return True
+    return False
 
 
 for line in inputFile:
@@ -52,18 +56,14 @@ dictionary.close()
 
 wordsInDict = 0
 wordsTotal = len(inputList)
-counter = 0
 inputLengthsList = [0]*21
 dictLengthsList = [0]*21
 
 for word in inputList:
-    counter += 1
     inputLengthsList[len(word)] += 1
     if find(word):
         wordsInDict += 1
         dictLengthsList[len(word)] += 1
-    if counter % int(wordsTotal/100) == 0:
-        print(str(counter) + " / " + str(wordsTotal))
 
 percentageList = [0 if dictLengthsList[i] == 0 else dictLengthsList[i]/inputLengthsList[i]*100 for i in range(21)]
 
