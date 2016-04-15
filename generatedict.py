@@ -8,7 +8,7 @@ start = time.clock()
 
 if len(sys.argv) < 3:
     sys.exit("Error: the input and output files weren't provided.\n"
-             "Example: python3 dd.py input.txt newdict.txt")
+             "Example: python3 generatedict.py input.txt newdict.txt")
 try:
     inputFile = open(sys.argv[1], 'r')
     dictionary = open(sys.argv[2], 'w')
