@@ -10,6 +10,8 @@ import time
 from bisect import bisect_left, insort
 from collections import defaultdict
 
+start = time.clock()
+
 
 def normalize_word(w):
     nw = ''
@@ -23,23 +25,24 @@ def normalize_word(w):
 
 def analyze_n_grams(w):
     w = "^" + w + "$"
-    for i in range(len(w)-1, 0):
+    for i in range(len(w)-1, 0, -1):
         for j in range(i, len(w)):
             fDict[w[i:j+1]].append(w[i-1])
 
 
 def complete_ngram(w):
-    return fDict[random.randrange(len(fDict[w]))]
+    return fDict[w][random.randrange(len(fDict[w]))]
 
 
 def generate_word():
-    print("k")
     w = "$"
     while w[0] is not "^" and len(w) <= 3:
         w = complete_ngram(w) + w
-    while w[0] is not "^":
-        w = complete_ngram(w[max(0, len(w)-6):-1]) + w
+    while w[0] is not "^" and len(w) <= 100:
+        w = complete_ngram(w[0:min(len(w), 3)]) + w
     return w[1:-1]
+
+# python3 dd5.py pride.txt out.txt wordsEn.txt
 
 
 def printf(w):
@@ -63,18 +66,13 @@ capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 aDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet) + 1))}
 fDict = defaultdict(list)
-charCounter = 0
-wordCounter = 0
-wordsInDict = 0
-neologismsInDict = 0
 inputList = []
 dictList = []
 inputLengthsList = [0]*maxLen
 dictLengthsList = [0]*maxLen
 neologismsLengthsList = [0]*maxLen
-dictLengthsList = [0]*maxLen
-
-start = time.clock()
+outputLengthsList = [0]*maxLen
+charCounter, wordCounter, wordsInDict, neologismsInDict = (0,)*4
 
 if len(sys.argv) < 4:
     sys.exit("Error: the input, output and dictionary files weren't provided.\n"
@@ -91,7 +89,7 @@ print("Parsing input, gathering data")
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
-        if 0 < len(word) <= 20:
+        if 0 < len(word) < maxLen:
             wordCounter += 1
             charCounter += len(word)
             analyze_n_grams(word)
@@ -100,7 +98,7 @@ inputFile.close()
 
 for line in dictFile:
     for word in line.split():
-        if 20 >= len(word) > 0:
+        if 0 < len(word) < maxLen:
             dictList.append(word)
 dictFile.close()
 
@@ -115,14 +113,16 @@ wordsToCreate = wordCounter
 
 print(wordsInDict)
 print()
+# print(fDict)
 printf("Generating words, parsing output")
-'''
+print()
+# '''
 while wordsRemaining > 0:
     w = generate_word()
-    neologismsLengthsList[len(w)] += 1
-    if find(dictList, w):
+    outputLengthsList[min(20, len(w))] += 1
+    if find(dictList, w) and not find(inputList, w):
         neologismsInDict += 1
-        neologismsLengthsList[len(w)] += 1
+        neologismsLengthsList[min(20, len(w))] += 1
     if (wordCounter - wordsRemaining) % (int(wordCounter / 10)) == 0 and wordCounter != wordsRemaining:
         printf(".")
     outputFile.write(w + ' ')
@@ -133,23 +133,20 @@ while wordsRemaining > 0:
 outputFile.close()
 
 print("\nWORDS\n")
-percentageList = [0 if dictLengthsList[i] == 0 else dictLengthsList[i]/inputLengthsList[i]*100 for i in range(21)]
+percentageList = [0 if inputLengthsList[i] == 0 else dictLengthsList[i]/inputLengthsList[i]*100 for i in range(maxLen)]
 for i in range(len(percentageList)):
     print(str(i) + " letter(s): " + str(dictLengthsList[i]) + " / " + str(inputLengthsList[i]) + " (" + str(percentageList[i]) + "%)")
 print(str(wordsInDict/wordCounter*100) + "%")
 print("of words exist in dictionary.")
 
 print("\nNEOLOGISMS\n")
-percentageList = [0 if neologismsLengthsList[i] == 0 else dictLengthsList[i]/neologismsLengthsList[i]*100 for i in range(21)]
+percentageList = [0 if outputLengthsList[i] == 0 else neologismsLengthsList[i]/outputLengthsList[i]*100 for i in range(maxLen)]
 for i in range(len(percentageList)):
-    print(str(i) + " letter(s): " + str(dictLengthsList[i]) + " / " + str(neologismsLengthsList[i]) + " (" + str(percentageList[i]) + "%)")
+    print(str(i) + " letter(s): " + str(neologismsLengthsList[i]) + " / " + str(outputLengthsList[i]) + " (" + str(percentageList[i]) + "%)")
 print(str(neologismsInDict/wordCounter*100) + "%")
 print("of neologisms exist in dictionary.")
-
-end = time.clock()
-
+# '''
 print()
 print(str(wordCounter) + " slow przetworzonych")
 print(str(charCounter) + " znakow przetworzonych")
-print("Czas wykonywania: " + str(end - start) + "s")
-'''
+print("Czas wykonywania: " + str(time.clock() - start) + "s")
