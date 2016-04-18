@@ -36,13 +36,9 @@ def complete_ngram(w):
 
 def generate_word():
     w = "$"
-    while w[0] is not "^" and len(w) <= 3:
-        w = complete_ngram(w) + w
-    while w[0] is not "^" and len(w) <= 100:
-        w = complete_ngram(w[0:min(len(w), 3)]) + w
+    while w[0] is not "^":
+        w = complete_ngram(w[0:min(len(w), depth)]) + w
     return w[1:-1]
-
-# python3 dd5.py pride.txt out.txt wordsEn.txt
 
 
 def printf(w):
@@ -57,8 +53,23 @@ def find(sortedList, w):
     return False
 
 
+def results(wordList):
+    inDictCounter = 0
+    for w in wordList:
+        if find(dictList, w):
+            inDictCounter += 1
+    print(str(inDictCounter / len(wordList) * 100) + "%", end='')
+    return str(inDictCounter)
+
+# 1 - 10% - 10143
+# 2 - 17% - 12631
+# 3 - 13% - 5167
+# 4 - 16% - 2387
+# 5 - 30% - 1162
+# 6 - 46% - 441
+depth = 1
 aSize = 50
-maxLen = 21
+maxLen = 101
 alphabet = '+^$aeiouybcdfghjklmnpqrstvwxząćęłńóśźżäöüßšžõ'
 alphabetList = [c for c in alphabet]
 capitals = '+^$AEIOUYBCDFGHJKLMNPQRSTVWXZĄĆĘŁŃÓŚŹŻÄÖÜẞŠŽÕ'
@@ -66,13 +77,8 @@ capitalsList = [c for c in capitals]
 toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 aDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet) + 1))}
 fDict = defaultdict(list)
-inputList = []
-dictList = []
-inputLengthsList = [0]*maxLen
-dictLengthsList = [0]*maxLen
-neologismsLengthsList = [0]*maxLen
-outputLengthsList = [0]*maxLen
-charCounter, wordCounter, wordsInDict, neologismsInDict = (0,)*4
+inputList, dictList, outputList, neologismsList = ([] for i in range(4))
+charCounter, wordCounter = (0, )*2
 
 if len(sys.argv) < 4:
     sys.exit("Error: the input, output and dictionary files weren't provided.\n"
@@ -84,12 +90,14 @@ try:
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
-print("Parsing input, gathering data")
+printf("Parsing input, gathering data")
 
 for line in inputFile:
     for word in line.split():
         word = normalize_word(word)
         if 0 < len(word) < maxLen:
+            if (wordCounter + 1) % 10000 == 0:
+                printf(".")
             wordCounter += 1
             charCounter += len(word)
             analyze_n_grams(word)
@@ -102,27 +110,15 @@ for line in dictFile:
             dictList.append(word)
 dictFile.close()
 
-for word in inputList:
-    inputLengthsList[len(word)] += 1
-    if find(dictList, word):
-        wordsInDict += 1
-        dictLengthsList[len(word)] += 1
-
 wordsRemaining = wordCounter
-wordsToCreate = wordCounter
 
-print(wordsInDict)
-print()
-# print(fDict)
-printf("Generating words, parsing output")
-print()
-# '''
+printf("\nGenerating words, parsing output")
+
 while wordsRemaining > 0:
     w = generate_word()
-    outputLengthsList[min(20, len(w))] += 1
-    if find(dictList, w) and not find(inputList, w):
-        neologismsInDict += 1
-        neologismsLengthsList[min(20, len(w))] += 1
+    outputList.append(w)
+    if not find(inputList, w):
+        neologismsList.append(w)
     if (wordCounter - wordsRemaining) % (int(wordCounter / 10)) == 0 and wordCounter != wordsRemaining:
         printf(".")
     outputFile.write(w + ' ')
@@ -132,21 +128,12 @@ while wordsRemaining > 0:
 
 outputFile.close()
 
-print("\nWORDS\n")
-percentageList = [0 if inputLengthsList[i] == 0 else dictLengthsList[i]/inputLengthsList[i]*100 for i in range(maxLen)]
-for i in range(len(percentageList)):
-    print(str(i) + " letter(s): " + str(dictLengthsList[i]) + " / " + str(inputLengthsList[i]) + " (" + str(percentageList[i]) + "%)")
-print(str(wordsInDict/wordCounter*100) + "%")
-print("of words exist in dictionary.")
-
-print("\nNEOLOGISMS\n")
-percentageList = [0 if outputLengthsList[i] == 0 else neologismsLengthsList[i]/outputLengthsList[i]*100 for i in range(maxLen)]
-for i in range(len(percentageList)):
-    print(str(i) + " letter(s): " + str(neologismsLengthsList[i]) + " / " + str(outputLengthsList[i]) + " (" + str(percentageList[i]) + "%)")
-print(str(neologismsInDict/wordCounter*100) + "%")
-print("of neologisms exist in dictionary.")
-# '''
 print()
-print(str(wordCounter) + " slow przetworzonych")
-print(str(charCounter) + " znakow przetworzonych")
-print("Czas wykonywania: " + str(time.clock() - start) + "s")
+results(inputList)
+print(" of the input words are correct.")
+results(outputList)
+print(" of the generated words are correct.")
+print(" of the created words are correct." + '\n' + results(neologismsList) + " correct words have been created." + '\n')
+print(str(wordCounter) + " words parsed")
+print(str(charCounter) + " characters parsed")
+print("Running time: " + str(time.clock() - start) + "s")
