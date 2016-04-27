@@ -13,7 +13,7 @@ start = time.clock()
 
 def normalize_word(w):
     nw = ''
-    if not "—" in w:
+    if "—" not in w:
         for i in range(len(w)):
             if w[i] in alphabetList and w[i] is not ("+" or "^" or "$"):
                 nw += w[i]
@@ -29,30 +29,30 @@ def analyze_n_grams(w):
             fDict[w[i:j+1]].append(w[i-1])
 
 
-def complete_ngram(w):
+def complete_n_gram(w):
     return fDict[w][random.randrange(len(fDict[w]))]
 
 
 def generate_word():
     w = "$"
     while w[0] is not "^":
-        w = complete_ngram(w[0:min(len(w), depth)]) + w
+        w = complete_n_gram(w[0:min(len(w), depth)]) + w
     return w[1:-1]
 
 
-def find(sortedList, w):
-    i = bisect_left(sortedList, w)
-    if i != len(sortedList) and sortedList[i] == w:
+def find(sorted_list, w):
+    i = bisect_left(sorted_list, w)
+    if i != len(sorted_list) and sorted_list[i] == w:
         return True
     return False
 
 
-def results(wordList):
-    inDictCounter = 0
-    for w in wordList:
+def results(word_list):
+    in_dict_counter = 0
+    for w in word_list:
         if find(dictList, w):
-            inDictCounter += 1
-    return str(inDictCounter / len(wordList) * 100) + "%"
+            in_dict_counter += 1
+    return str(in_dict_counter / len(word_list) * 100) + "%"
 
 # 1 - 10% - 10143
 # 2 - 17% - 12547
@@ -106,14 +106,14 @@ for line in dictFile:
 dictFile.close()
 
 for wordsToCreate in trange(wordCounter, desc="Generating words, parsing output"):
-    w = generate_word()
-    outputList.append(w)
-    if not find(inputList, w):
-        neologismsList.append(w)
-    outputFile.write(w + ' ')
-    if not find(inputList, w) and not find(dictList, w):
+    word = generate_word()
+    outputList.append(word)
+    if not find(inputList, word):
+        neologismsList.append(word)
+    outputFile.write(word + ' ')
+    if not find(inputList, word) and not find(dictList, word):
         actualNeologisms += 1
-        neoFile.write(w + ' ')
+        neoFile.write(word + ' ')
         if actualNeologisms % 10 == 9:
             neoFile.write('\n')
     if wordsToCreate % 10 == 9:
@@ -123,9 +123,9 @@ neoFile.close()
 outputFile.close()
 
 print(results(inputList) + " of the input words are correct.\n" +
-results(outputList) + " of the generated words are correct.\n" +
-results(neologismsList) + " of the created words are correct.\n" +
-str(actualNeologisms) + " actual neologisms have been created.\n" +
-str(wordCounter) + " words parsed.\n" +
-str(charCounter) + " characters parsed.\n" +
-"Running time: " + str(time.clock() - start) + "s")
+      results(outputList) + " of the generated words are correct.\n" +
+      results(neologismsList) + " of the created words are correct.\n" +
+      str(actualNeologisms) + " actual neologisms have been created.\n" +
+      str(wordCounter) + " words parsed.\n" +
+      str(charCounter) + " characters parsed.\n" +
+      "Running time: " + str(time.clock() - start) + "s")
