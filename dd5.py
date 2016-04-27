@@ -13,7 +13,7 @@ start = time.clock()
 
 def normalize_word(w):
     nw = ''
-    if "—" not in w:
+    if "—" and "-" not in w:
         for i in range(len(w)):
             if w[i] in alphabetList and w[i] is not ("+" or "^" or "$"):
                 nw += w[i]
@@ -54,12 +54,12 @@ def results(word_list):
             in_dict_counter += 1
     return str(in_dict_counter / len(word_list) * 100) + "%"
 
-# 1 - 10% - 10143
-# 2 - 17% - 12547
-# 3 - 14% - 5254
-# 4 - 17% - 2431
-# 5 - 31% - 1149
-# 6 - 41% - 389
+# 1 - 10% - 87920
+# 2 - 17% - 61281
+# 3 - 14% - 33736
+# 4 - 17% - 11853
+# 5 - 31% - 2578
+# 6 - 49% - 527
 # 7 - 56% - 201
 # 8 - 64% - 88
 # 9 - 67% - 32
