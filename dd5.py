@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
 # Author: Existanza
-# sys.version
-# 3.4.3 (default, Oct 14 2015, 20:28:29)
-# [GCC 4.8.4]
 
 import random
 import sys
 import time
 from bisect import bisect_left, insort
 from collections import defaultdict
+from tqdm import tqdm, trange
 
 start = time.clock()
 
 
 def normalize_word(w):
     nw = ''
-    for i in range(len(w)):
-        if w[i] in alphabetList and w[i] is not ("+" or "^" or "$"):
-            nw += w[i]
-        elif w[i] in capitalsList and w[i] is not ("+" or "^" or "$"):
-            nw += toSmallDict[w[i]]
+    if not "—" in w:
+        for i in range(len(w)):
+            if w[i] in alphabetList and w[i] is not ("+" or "^" or "$"):
+                nw += w[i]
+            elif w[i] in capitalsList and w[i] is not ("+" or "^" or "$"):
+                nw += toSmallDict[w[i]]
     return nw
 
 
@@ -41,11 +40,6 @@ def generate_word():
     return w[1:-1]
 
 
-def printf(w):
-    print(w, end=' ')
-    sys.stdout.flush()
-
-
 def find(sortedList, w):
     i = bisect_left(sortedList, w)
     if i != len(sortedList) and sortedList[i] == w:
@@ -58,16 +52,18 @@ def results(wordList):
     for w in wordList:
         if find(dictList, w):
             inDictCounter += 1
-    print(str(inDictCounter / len(wordList) * 100) + "%", end='')
-    return str(inDictCounter)
+    return str(inDictCounter / len(wordList) * 100) + "%"
 
 # 1 - 10% - 10143
-# 2 - 17% - 12631
-# 3 - 13% - 5167
-# 4 - 16% - 2387
-# 5 - 30% - 1162
-# 6 - 46% - 441
-depth = 1
+# 2 - 17% - 12547
+# 3 - 14% - 5254
+# 4 - 17% - 2431
+# 5 - 31% - 1149
+# 6 - 41% - 389
+# 7 - 56% - 201
+# 8 - 64% - 88
+# 9 - 67% - 32
+depth = 5
 aSize = 50
 maxLen = 101
 alphabet = '+^$aeiouybcdfghjklmnpqrstvwxząćęłńóśźżäöüßšžõ'
@@ -78,26 +74,25 @@ toSmallDict = {c: s for c, s in zip(capitals, alphabet)}
 aDict = {ch: i for ch, i in zip(alphabet, range(len(alphabet) + 1))}
 fDict = defaultdict(list)
 inputList, dictList, outputList, neologismsList = ([] for i in range(4))
-charCounter, wordCounter = (0, )*2
+charCounter, wordCounter, wordsToCreate, actualNeologisms = (0, )*4
 
-if len(sys.argv) < 4:
-    sys.exit("Error: the input, output and dictionary files weren't provided.\n"
-             "Example: python3 main.py input.txt output.txt dictionary.txt")
+if len(sys.argv) < 5:
+    sys.exit("Error: the source, input, output, neologisms output and dictionary files weren't provided.\n"
+             "Example: python3 main.py input.txt output.txt neologisms.txt dictionary.txt")
 try:
     inputFile = open(sys.argv[1], 'r')
     outputFile = open(sys.argv[2], 'w')
-    dictFile = open(sys.argv[3], 'r')
+    neoFile = open(sys.argv[3], 'w')
+    dictFile = open(sys.argv[4], 'r')
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
-printf("Parsing input, gathering data")
-
-for line in inputFile:
+lineCount = sum(1 for l in inputFile)
+inputFile.seek(0)
+for line in tqdm(inputFile, total=lineCount, desc="Parsing input, gathering data"):
     for word in line.split():
         word = normalize_word(word)
         if 0 < len(word) < maxLen:
-            if (wordCounter + 1) % 10000 == 0:
-                printf(".")
             wordCounter += 1
             charCounter += len(word)
             analyze_n_grams(word)
@@ -110,30 +105,27 @@ for line in dictFile:
             dictList.append(word)
 dictFile.close()
 
-wordsRemaining = wordCounter
-
-printf("\nGenerating words, parsing output")
-
-while wordsRemaining > 0:
+for wordsToCreate in trange(wordCounter, desc="Generating words, parsing output"):
     w = generate_word()
     outputList.append(w)
     if not find(inputList, w):
         neologismsList.append(w)
-    if (wordCounter - wordsRemaining) % (int(wordCounter / 10)) == 0 and wordCounter != wordsRemaining:
-        printf(".")
     outputFile.write(w + ' ')
-    if (wordCounter - wordsRemaining) % 10 == 9:
+    if not find(inputList, w) and not find(dictList, w):
+        actualNeologisms += 1
+        neoFile.write(w + ' ')
+        if actualNeologisms % 10 == 9:
+            neoFile.write('\n')
+    if wordsToCreate % 10 == 9:
         outputFile.write('\n')
-    wordsRemaining -= 1
-
+    wordsToCreate += 1
+neoFile.close()
 outputFile.close()
 
-print()
-results(inputList)
-print(" of the input words are correct.")
-results(outputList)
-print(" of the generated words are correct.")
-print(" of the created words are correct." + '\n' + results(neologismsList) + " correct words have been created." + '\n')
-print(str(wordCounter) + " words parsed")
-print(str(charCounter) + " characters parsed")
-print("Running time: " + str(time.clock() - start) + "s")
+print(results(inputList) + " of the input words are correct.\n" +
+results(outputList) + " of the generated words are correct.\n" +
+results(neologismsList) + " of the created words are correct.\n" +
+str(actualNeologisms) + " actual neologisms have been created.\n" +
+str(wordCounter) + " words parsed.\n" +
+str(charCounter) + " characters parsed.\n" +
+"Running time: " + str(time.clock() - start) + "s")
