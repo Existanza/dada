@@ -54,15 +54,7 @@ def results(word_list):
             in_dict_counter += 1
     return str(in_dict_counter / len(word_list) * 100) + "%"
 
-# 1 - 10% - 87920
-# 2 - 17% - 61281
-# 3 - 14% - 33736
-# 4 - 17% - 11853
-# 5 - 31% - 2578
-# 6 - 49% - 527
-# 7 - 56% - 201
-# 8 - 64% - 88
-# 9 - 67% - 32
+
 depth = 5
 aSize = 50
 maxLen = 101
@@ -79,11 +71,12 @@ charCounter, wordCounter, wordsToCreate, actualNeologisms = (0, )*4
 if len(sys.argv) < 5:
     sys.exit("Error: the source, input, output, neologisms output and dictionary files weren't provided.\n"
              "Example: python3 main.py input.txt output.txt neologisms.txt dictionary.txt")
+    # python dd5.py data\padeusz.txt data\padeuszOut.txt data\padeuszNeo.txt data\wordsPl.txt
 try:
-    inputFile = open(sys.argv[1], 'r')
-    outputFile = open(sys.argv[2], 'w')
-    neoFile = open(sys.argv[3], 'w')
-    dictFile = open(sys.argv[4], 'r')
+    inputFile = open(sys.argv[1], 'r', encoding='utf-8')
+    outputFile = open(sys.argv[2], 'w', encoding='utf-8')
+    neoFile = open(sys.argv[3], 'w', encoding='utf-8')
+    dictFile = open(sys.argv[4], 'r', encoding='utf-8')
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
@@ -102,7 +95,7 @@ inputFile.close()
 for line in dictFile:
     for word in line.split():
         if 0 < len(word) < maxLen:
-            dictList.append(word)
+            insort(dictList, word)
 dictFile.close()
 
 for wordsToCreate in trange(wordCounter, desc="Generating words, parsing output"):
