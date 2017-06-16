@@ -49,10 +49,10 @@ def find(sorted_list, w):
 
 def results(word_list):
     in_dict_counter = 0
-    for w in word_list:
+    for w in tqdm(word_list, total=len(word_list), desc="Generating statistics"):
         if find(dictList, w):
             in_dict_counter += 1
-    return str(in_dict_counter / len(word_list) * 100) + "%"
+    return str(round(in_dict_counter / len(word_list) * 100, 2)) + "%"
 
 
 depth = 5
@@ -80,7 +80,7 @@ try:
 except OSError as err:
     sys.exit("OS error: {0}".format(err))
 
-lineCount = sum(1 for l in inputFile)
+lineCount = sum(1 for il in inputFile)
 inputFile.seek(0)
 for line in tqdm(inputFile, total=lineCount, desc="Parsing input, gathering data"):
     for word in line.split():
@@ -92,7 +92,9 @@ for line in tqdm(inputFile, total=lineCount, desc="Parsing input, gathering data
             insort(inputList, word)
 inputFile.close()
 
-for line in dictFile:
+lineCount = sum(1 for dl in dictFile)
+dictFile.seek(0)
+for line in tqdm(dictFile, total=lineCount, desc="Parsing dictionary"):
     for word in line.split():
         if 0 < len(word) < maxLen:
             insort(dictList, word)
@@ -121,4 +123,4 @@ print(results(inputList) + " of the input words are correct.\n" +
       str(actualNeologisms) + " actual neologisms have been created.\n" +
       str(wordCounter) + " words parsed.\n" +
       str(charCounter) + " characters parsed.\n" +
-      "Running time: " + str(time.clock() - start) + "s")
+      "Running time: " + str(round(time.clock() - start, 2)) + "s")
